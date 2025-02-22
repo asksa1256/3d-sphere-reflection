@@ -6,12 +6,12 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 if (WEBGL.isWebGLAvailable()) {
   const scene = new THREE.Scene()
   let urls = [
-    '/3d-sphere-reflection/static/textures/posx.jpg',
-    '/3d-sphere-reflection/static/textures/negx.jpg',
-    '/3d-sphere-reflection/static/textures/posy.jpg',
-    '/3d-sphere-reflection/static/textures/negy.jpg',
-    '/3d-sphere-reflection/static/textures/posz.jpg',
-    '/3d-sphere-reflection/static/textures/negz.jpg',
+    '../static/textures/posx.jpg',
+    '../static/textures/negx.jpg',
+    '../static/textures/posy.jpg',
+    '../static/textures/negy.jpg',
+    '../static/textures/posz.jpg',
+    '../static/textures/negz.jpg',
   ]
   let imgLoader = new THREE.CubeTextureLoader()
   scene.background = imgLoader.load(urls)
