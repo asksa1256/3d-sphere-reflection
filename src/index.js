@@ -1,173 +1,75 @@
 import * as THREE from 'three'
 import { WEBGL } from './webgl'
-import './modal'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+// import { CubeCamera } from 'three/src/cameras/CubeCamera'
 
 if (WEBGL.isWebGLAvailable()) {
-  var camera, scene, renderer
-  var plane
-  var mouse,
-    raycaster,
-    isShiftDown = false
+  const scene = new THREE.Scene()
+  let urls = [
+    '../static/textures/posx.jpg',
+    '../static/textures/negx.jpg',
+    '../static/textures/posy.jpg',
+    '../static/textures/negy.jpg',
+    '../static/textures/posz.jpg',
+    '../static/textures/negz.jpg',
+  ]
+  let imgLoader = new THREE.CubeTextureLoader()
+  scene.background = imgLoader.load(urls)
 
-  var rollOverMesh, rollOverMaterial
-  var cubeGeo, cubeMaterial
+  const camera = new THREE.PerspectiveCamera(
+    70,
+    window.innerWidth / window.innerHeight,
+    1,
+    5000
+  )
+  //controls.update() must be called after any manual changes to the camera's transform
+  camera.position.set(0, 2, 10)
 
-  var objects = []
+  const renderer = new THREE.WebGLRenderer()
+  renderer.setSize(window.innerWidth, window.innerHeight)
+  document.body.appendChild(renderer.domElement)
 
-  init()
-  render()
+  // Create cube render target
+  const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, {
+    generateMipmaps: true,
+    minFilter: THREE.LinearMipmapLinearFilter,
+  })
+  cubeRenderTarget.texture.type = THREE.HalfFloatType
 
-  function init() {
-    camera = new THREE.PerspectiveCamera(
-      45,
-      window.innerWidth / window.innerHeight,
-      1,
-      10000
-    )
-    camera.position.set(500, 800, 1300)
-    camera.lookAt(0, 0, 0)
+  // Mesh Camera
+  let cubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget)
+  scene.add(cubeCamera)
 
-    scene = new THREE.Scene()
-    scene.background = new THREE.Color(0xf0f0f0)
+  // Mesh
+  let geometry = new THREE.SphereGeometry(3, 64, 32)
+  let material = new THREE.MeshBasicMaterial({
+    envMap: cubeRenderTarget.texture,
+    roughness: 0.05,
+    side: THREE.DoubleSide,
+  })
+  let sphere = new THREE.Mesh(geometry, material)
+  sphere.position.set(0, 0, 0)
+  scene.add(sphere)
 
-    var rollOverGeo = new THREE.BoxBufferGeometry(50, 50, 50)
-    rollOverMaterial = new THREE.MeshBasicMaterial({
-      color: 0xff0000,
-      opacity: 0.5,
-      transparent: true,
-    })
-    rollOverMesh = new THREE.Mesh(rollOverGeo, rollOverMaterial)
-    scene.add(rollOverMesh)
+  // OrbitControls
+  const controls = new OrbitControls(camera, renderer.domElement)
+  controls.update()
+  controls.enableDamping = true
 
-    cubeGeo = new THREE.BoxBufferGeometry(50, 50, 50)
-    cubeMaterial = new THREE.MeshLambertMaterial({
-      color: 0xfeb74c,
-      map: new THREE.TextureLoader().load('static/textures/square.png'),
-    })
-
-    var gridHelper = new THREE.GridHelper(1000, 20)
-    scene.add(gridHelper)
-
-    raycaster = new THREE.Raycaster()
-    mouse = new THREE.Vector2()
-
-    var geometry = new THREE.PlaneBufferGeometry(1000, 1000)
-    geometry.rotateX(-Math.PI / 2)
-
-    plane = new THREE.Mesh(
-      geometry,
-      new THREE.MeshBasicMaterial({ visible: false })
-    )
-    scene.add(plane)
-
-    objects.push(plane)
-
-    var ambientLight = new THREE.AmbientLight(0x606060)
-    scene.add(ambientLight)
-
-    var directionalLight = new THREE.DirectionalLight(0xffffff)
-    directionalLight.position.set(1, 0.75, 0.5).normalize()
-    scene.add(directionalLight)
-
-    renderer = new THREE.WebGLRenderer({ antialias: true })
-    renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.setSize(window.innerWidth, window.innerHeight)
-    document.body.appendChild(renderer.domElement)
-
-    document.addEventListener('mousemove', onDocumentMouseMove, false)
-    document.addEventListener('mousedown', onDocumentMouseDown, false)
-    document.addEventListener('keydown', onDocumentKeyDown, false)
-    document.addEventListener('keyup', onDocumentKeyUp, false)
-    window.addEventListener('resize', onWindowResize, false)
-  }
-
-  function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight
-    camera.updateProjectionMatrix()
-
-    renderer.setSize(window.innerWidth, window.innerHeight)
-  }
-
-  function onDocumentMouseMove(event) {
-    event.preventDefault()
-
-    mouse.set(
-      (event.clientX / window.innerWidth) * 2 - 1,
-      -(event.clientY / window.innerHeight) * 2 + 1
-    )
-
-    raycaster.setFromCamera(mouse, camera)
-
-    var intersects = raycaster.intersectObjects(objects)
-
-    if (intersects.length > 0) {
-      var intersect = intersects[0]
-
-      rollOverMesh.position.copy(intersect.point).add(intersect.face.normal)
-      rollOverMesh.position
-        .divideScalar(50)
-        .floor()
-        .multiplyScalar(50)
-        .addScalar(25)
-    }
-
-    render()
-  }
-
-  function onDocumentMouseDown(event) {
-    event.preventDefault()
-
-    mouse.set(
-      (event.clientX / window.innerWidth) * 2 - 1,
-      -(event.clientY / window.innerHeight) * 2 + 1
-    )
-
-    raycaster.setFromCamera(mouse, camera)
-
-    var intersects = raycaster.intersectObjects(objects)
-
-    if (intersects.length > 0) {
-      var intersect = intersects[0]
-
-      if (isShiftDown) {
-        if (intersect.object !== plane) {
-          scene.remove(intersect.object)
-
-          objects.splice(objects.indexOf(intersect.object), 1)
-        }
-
-      } else {
-        var voxel = new THREE.Mesh(cubeGeo, cubeMaterial)
-        voxel.position.copy(intersect.point).add(intersect.face.normal)
-        voxel.position.divideScalar(50).floor().multiplyScalar(50).addScalar(25)
-        scene.add(voxel)
-
-        objects.push(voxel)
-      }
-
-      render()
-    }
-  }
-
-  function onDocumentKeyDown(event) {
-    switch (event.keyCode) {
-      case 16:
-        isShiftDown = true
-        break
-    }
-  }
-
-  function onDocumentKeyUp(event) {
-    switch (event.keyCode) {
-      case 16:
-        isShiftDown = false
-        break
-    }
-  }
-
-  function render() {
+  function animate() {
+    requestAnimationFrame(animate)
+    cubeCamera.update(renderer, scene)
+    controls.update()
     renderer.render(scene, camera)
   }
+  animate()
+
+  // responsive
+  function windowResize() {
+    camera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
+  }
+  window.addEventListener('resize', windowResize)
 } else {
   var warning = WEBGL.getWebGLErrorMessage()
   document.body.appendChild(warning)
