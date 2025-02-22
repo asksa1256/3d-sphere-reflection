@@ -44,7 +44,6 @@ if (WEBGL.isWebGLAvailable()) {
   let geometry = new THREE.SphereGeometry(3, 64, 32)
   let material = new THREE.MeshBasicMaterial({
     envMap: cubeRenderTarget.texture,
-    roughness: 0.05,
     side: THREE.DoubleSide,
   })
   let sphere = new THREE.Mesh(geometry, material)
@@ -58,7 +57,9 @@ if (WEBGL.isWebGLAvailable()) {
 
   function animate() {
     requestAnimationFrame(animate)
+    sphere.visible = false // `CubeCamera` 업데이트 전에 메쉬 숨기기
     cubeCamera.update(renderer, scene)
+    sphere.visible = true // `CubeCamera` 업데이트 후 메쉬 다시 보이기
     controls.update()
     renderer.render(scene, camera)
   }
@@ -66,6 +67,7 @@ if (WEBGL.isWebGLAvailable()) {
 
   // responsive
   function windowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
     renderer.setSize(window.innerWidth, window.innerHeight)
   }
