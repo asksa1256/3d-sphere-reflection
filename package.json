@@ -6,7 +6,9 @@
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "start": "webpack-dev-server --mode development",
-    "format": "prettier --write '**/*.js'"
+    "format": "prettier --write '**/*.js'",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +17,7 @@
     "three": "^0.146.0"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "prettier": "^2.0.4",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
